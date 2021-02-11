@@ -2,8 +2,8 @@
 from numpy import random, random_intel
 import matplotlib.pyplot as plt
 import numpy as np
-
-def finite_difference_method(n0 = None, nsteps=1000, dt=0.01, trials = 100, gamma = 0.15, sigma = (0.0025)**0.5):
+import math
+def finite_difference_method(n0 = None, nsteps=10000, dt=0.01, trials = 100, gamma = 0.15, sigma = (0.0025)**0.5):
     """ this function computes the numerical intergral of a stochastic process
     through the first order approximation from taylor expansion
     u((i+1)h) = u(ih) + h*u'(ih)
@@ -25,9 +25,13 @@ def finite_difference_method(n0 = None, nsteps=1000, dt=0.01, trials = 100, gamm
     print('shape of n is ',n.shape)
     for m in range(trials):
         for h in range(nsteps):
-            n[m,h+1] = n[m,h]+1*(-gamma*n[m,h]*dt+sigma*dB[m,h])
+            n[m, h+1] = n[m,h]+1*(-gamma*n[m,h]*dt+sigma*dB[m,h])
+            if n[m, h+1]<=0:
+                #np.concatenate((n[m], (np.zeros(nsteps-h))))
+                n[m, h+1:] = np.zeros(nsteps-h)
+                break
     print('new shape of n is ', n.shape)
-    print(n)
+    print(n[1])
     plt.figure()
     for k in range(trials):
         plt.plot(t, n[k])
@@ -43,7 +47,7 @@ def finite_difference_method(n0 = None, nsteps=1000, dt=0.01, trials = 100, gamm
     plt.plot(t, -t, linewidth=6)
     plt.show()
 
-    return None
+    return t,n
 
 
 
@@ -118,6 +122,16 @@ def brownian(x0, n, dt, out=None):
 
 finite_difference_method()
 
+
+def first_order_spec():
+    u = 1
+    hbar = 0.6582 #eV.fs
+    w0 = 2.35 #eV
+    t = #time
+    SN = #Sum or integral of N(t)
+    V0 = 0.01 #Interaction potential (0.01 eV = 10 meV)
+    n0 = 2 #k=0 population
+    s = (2*(u**2)/hbar)*(math.exp(1j*(w0*t+V0*n0+2*V0*SN)))
 
 #print(dB.shape, 'shape of db', dB[0][:10])
 #plt.figure()
