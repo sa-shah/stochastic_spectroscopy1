@@ -2,7 +2,9 @@
 from numpy import random, random_intel
 import matplotlib.pyplot as plt
 import numpy as np
-import math
+import cmath
+
+
 def finite_difference_method(n0 = None, nsteps=10000, dt=0.01, trials = 100, gamma = 0.15, sigma = (0.0025)**0.5):
     """ this function computes the numerical intergral of a stochastic process
     through the first order approximation from taylor expansion
@@ -10,12 +12,12 @@ def finite_difference_method(n0 = None, nsteps=10000, dt=0.01, trials = 100, gam
     """
 
     if n0 is None:
-        n0 = np.ones(trials)*10
+        n0 = np.ones(trials)*1
 
     # Create an empty array to store the realizations.
     x = np.empty((trials, nsteps + 1))
     # Initial values of x.
-    x[:, 0] = 0 #
+    x[:, 0] = n0 #
     xx,dB = brownian(x[:, 0], nsteps, dt, out=x[:, 1:])
     print(dB.shape, 'is the shape of db')
     print('shape of x is ', x.shape, ' 1st element ', x[0][0])
@@ -27,7 +29,6 @@ def finite_difference_method(n0 = None, nsteps=10000, dt=0.01, trials = 100, gam
         for h in range(nsteps):
             n[m, h+1] = n[m,h]+1*(-gamma*n[m,h]*dt+sigma*dB[m,h])
             if n[m, h+1]<=0:
-                #np.concatenate((n[m], (np.zeros(nsteps-h))))
                 n[m, h+1:] = np.zeros(nsteps-h)
                 break
     print('new shape of n is ', n.shape)
@@ -40,7 +41,7 @@ def finite_difference_method(n0 = None, nsteps=10000, dt=0.01, trials = 100, gam
 
     plt.figure()
     for k in range(trials):
-        plt.plot(t, x[k])
+        plt.plot(t, x[k]-np.mean(n0))
     plt.plot(t, [(k ** 0.5) for k in t], linewidth=6)
     plt.plot(t, [-(k ** 0.5) for k in t], linewidth=6)
     plt.plot(t, t, linewidth=6)
@@ -120,20 +121,51 @@ def brownian(x0, n, dt, out=None):
 
     return out,r
 
-finite_difference_method()
 
 
 def first_order_spec():
+    trials = 100
+    dt = 0.001
+    nsteps = 1000000
+    gamma = 0.01 # per fs
+    sigma = 0.0025**0.5 # per fs
+    sigmaN0 = 0.125**0.5 # per fs
+    N0 = random.normal(2, sigmaN0, trials)
+
+    t, N = finite_difference_method(N0, nsteps, dt, trials, gamma, sigma)
     u = 1
     hbar = 0.6582 #eV.fs
     w0 = 2.35 #eV
-    t = #time
-    SN = #Sum or integral of N(t)
+    #SN = np.mean(np.cumsum(N, axis=-1), axis=0) #Sum or integral of N(t)
+    sN = np.cumsum(N, axis=-1)  # Sum or integral of N(t)
+    #print('summed N ', SN.shape)
     V0 = 0.01 #Interaction potential (0.01 eV = 10 meV)
     n0 = 2 #k=0 population
-    s = (2*(u**2)/hbar)*(math.exp(1j*(w0*t+V0*n0+2*V0*SN)))
+    ss = np.zeros((trials, nsteps+1))
+    c1 = 2 * (u ** 2) / hbar
+    for l in range(trials):
+        SN = sN[l]
+        for k in range(nsteps+1):
+            c2 = cmath.exp(1j*t[k]* (w0 + V0*n0 + 2*V0*SN[k]))
+            c3 = (cmath.exp(-1j*V0*t[k]) - 1)*n0 - 1
+            ss[l][k] = (c1*c2*c3).imag
+    s = np.mean(ss, axis=0)  # avg spectrum
+    plt.figure()
+    plt.plot(t, s)
+    plt.show()
+
+    spec = np.fft.fft(s)
+    freq = np.fft.fftfreq(t.shape[-1])
+    plt.figure()
+    plt.plot(abs(spec))
+    #plt.plot(spec.real)
+    plt.show()
+
+
 
 #print(dB.shape, 'shape of db', dB[0][:10])
 #plt.figure()
 #plt.hist(dB[0][:])
 #plt.show()
+
+first_order_spec()
