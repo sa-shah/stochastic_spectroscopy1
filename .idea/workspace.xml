@@ -27,8 +27,8 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/finite_difference.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="402">
-              <caret line="150" column="38" lean-forward="true" selection-start-line="150" selection-start-column="38" selection-end-line="150" selection-end-column="38" />
+            <state relative-caret-position="300">
+              <caret line="128" column="19" selection-start-line="128" selection-start-column="19" selection-end-line="128" selection-end-column="19" />
               <folding>
                 <element signature="e#1#39#0" expanded="true" />
                 <element signature="e#154#300#1" />
@@ -179,7 +179,7 @@
       <window_info id="Structure" order="2" sideWeight="0.5026455" side_tool="true" weight="0.24960254" />
       <window_info anchor="bottom" id="Version Control" sideWeight="0.49920508" weight="0.32786885" />
       <window_info anchor="bottom" id="Python Console" sideWeight="0.49920508" weight="0.32786885" />
-      <window_info anchor="bottom" id="Terminal" weight="0.20487265" />
+      <window_info anchor="bottom" id="Terminal" weight="0.20437159" />
       <window_info anchor="bottom" id="Event Log" sideWeight="0.5007949" side_tool="true" weight="0.3285968" />
       <window_info anchor="bottom" id="Message" order="0" />
       <window_info anchor="bottom" id="Find" order="1" />
@@ -228,8 +228,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/finite_difference.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="402">
-          <caret line="150" column="38" lean-forward="true" selection-start-line="150" selection-start-column="38" selection-end-line="150" selection-end-column="38" />
+        <state relative-caret-position="300">
+          <caret line="128" column="19" selection-start-line="128" selection-start-column="19" selection-end-line="128" selection-end-column="19" />
           <folding>
             <element signature="e#1#39#0" expanded="true" />
             <element signature="e#154#300#1" />

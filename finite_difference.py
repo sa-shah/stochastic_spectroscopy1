@@ -124,9 +124,9 @@ def brownian(x0, n, dt, out=None):
 
 
 def first_order_spec():
-    trials = 100
+    trials = 1000
     dt = 0.001
-    nsteps = 1000000
+    nsteps = 100000it
     gamma = 0.01 # per fs
     sigma = 0.0025**0.5 # per fs
     sigmaN0 = 0.125**0.5 # per fs
@@ -136,20 +136,23 @@ def first_order_spec():
     u = 1
     hbar = 0.6582 #eV.fs
     w0 = 2.35 #eV
-    #SN = np.mean(np.cumsum(N, axis=-1), axis=0) #Sum or integral of N(t)
-    sN = np.cumsum(N, axis=-1)  # Sum or integral of N(t)
+    SN = np.mean(np.cumsum(N, axis=-1), axis=0) #Sum or integral of N(t)
+    #sN = np.cumsum(N, axis=-1)  # Sum or integral of N(t)
     #print('summed N ', SN.shape)
     V0 = 0.01 #Interaction potential (0.01 eV = 10 meV)
     n0 = 2 #k=0 population
-    ss = np.zeros((trials, nsteps+1))
+    #ss = np.zeros((trials, nsteps+1))
+    ss = np.zeros(nsteps + 1)
     c1 = 2 * (u ** 2) / hbar
-    for l in range(trials):
-        SN = sN[l]
-        for k in range(nsteps+1):
-            c2 = cmath.exp(1j*t[k]* (w0 + V0*n0 + 2*V0*SN[k]))
-            c3 = (cmath.exp(-1j*V0*t[k]) - 1)*n0 - 1
-            ss[l][k] = (c1*c2*c3).imag
-    s = np.mean(ss, axis=0)  # avg spectrum
+    #for l in range(trials):
+    #    SN = sN[l]
+    for k in range(nsteps+1):
+        c2 = cmath.exp(1j*t[k]* (w0 + V0*n0 + 2*V0*SN[k]))
+        c3 = (cmath.exp(-1j*V0*t[k]) - 1)*n0 - 1
+        #ss[l][k] = (c1*c2*c3).imag
+        ss[k] = (c1 * c2 * c3).imag
+    #s = np.mean(ss, axis=0)  # avg spectrum
+    s = ss
     plt.figure()
     plt.plot(t, s)
     plt.show()
