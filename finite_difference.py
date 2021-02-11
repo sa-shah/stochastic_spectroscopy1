@@ -3,23 +3,52 @@ from numpy import random, random_intel
 import matplotlib.pyplot as plt
 import numpy as np
 
-def finite_difference_method(t0=0,nsteps=1000, dt=0.001):
+def finite_difference_method(n0 = None, nsteps=1000, dt=0.01, trials = 100, gamma = 0.15, sigma = (0.0025)**0.5):
     """ this function computes the numerical intergral of a stochastic process
     through the first order approximation from taylor expansion
     u((i+1)h) = u(ih) + h*u'(ih)
     """
-    gamma = 1
-    sigma = 1
-    dB = 1
-    n = [0]
-    for x in range(nsteps):
-        n.append(n(x)+dt*(-gamma*n*dt+sigma*dB))
-    print(n[-1])
+
+    if n0 is None:
+        n0 = np.ones(trials)*10
+
+    # Create an empty array to store the realizations.
+    x = np.empty((trials, nsteps + 1))
+    # Initial values of x.
+    x[:, 0] = 0 #
+    xx,dB = brownian(x[:, 0], nsteps, dt, out=x[:, 1:])
+    print(dB.shape, 'is the shape of db')
+    print('shape of x is ', x.shape, ' 1st element ', x[0][0])
+    t = np.linspace(0.0, nsteps * dt, nsteps + 1)
+    print('the shape of t is ', t.shape)
+    n = np.ones((trials, nsteps+1))*1
+    print('shape of n is ',n.shape)
+    for m in range(trials):
+        for h in range(nsteps):
+            n[m,h+1] = n[m,h]+1*(-gamma*n[m,h]*dt+sigma*dB[m,h])
+    print('new shape of n is ', n.shape)
+    print(n)
+    plt.figure()
+    for k in range(trials):
+        plt.plot(t, n[k])
+    plt.plot(t,np.mean(n,0),linewidth=6)
+    plt.show()
+
+    plt.figure()
+    for k in range(trials):
+        plt.plot(t, x[k])
+    plt.plot(t, [(k ** 0.5) for k in t], linewidth=6)
+    plt.plot(t, [-(k ** 0.5) for k in t], linewidth=6)
+    plt.plot(t, t, linewidth=6)
+    plt.plot(t, -t, linewidth=6)
+    plt.show()
+
+    return None
 
 
 
 
-def brownian(x0, n, dt, delta, out=None):
+def brownian(x0, n, dt, out=None):
     """
     Generate an instance of Brownian motion (i.e. the Wiener process):
 
@@ -69,7 +98,7 @@ def brownian(x0, n, dt, delta, out=None):
     # For each element of x0, generate a sample of n numbers from a
     # normal distribution.
     #r = norm.rvs(size=x0.shape + (n,), scale=delta * sqrt(dt))
-    r = random.normal(0,delta*(dt**0.5),x0.shape+(n,))
+    r = random.normal(0,dt**0.5,x0.shape+(n,))
     #size is the number of random values, scale is the std of distribution, and loc = location (mu)
     #plt.figure()
     #plt.hist(np.squeeze(r))
@@ -87,30 +116,10 @@ def brownian(x0, n, dt, delta, out=None):
 
     return out,r
 
+finite_difference_method()
 
-nsteps = 100000
-dt = 0.01
-# Number of realizations to generate.
-m = 100
-# Create an empty array to store the realizations.
-x = np.empty((m,nsteps+1))
-# Initial values of x.
-x[:, 0] = 0
-delta = 1 #delta is the scalling factor that governs the speed of motion
-xx, dB = brownian(x[:,0], nsteps, dt, 1, out=x[:,1:])
-print('shape of x is ', x.shape, ' 1st element ',x[0][0])
-t = np.linspace(0.0, nsteps*dt, nsteps+1)
-print(t.shape)
-plt.figure()
-for k in range(m):
-    plt.plot(t,x[k])
-plt.plot(t,[(k**0.5) for k in t])
-plt.plot(t,[-(k**0.5) for k in t])
-plt.plot(t,t)
-plt.plot(t,-t)
-plt.show()
 
-print(dB.shape, 'shape of db', dB[0][:10])
-plt.figure()
-plt.hist(dB[0][:])
-plt.show()
+#print(dB.shape, 'shape of db', dB[0][:10])
+#plt.figure()
+#plt.hist(dB[0][:])
+#plt.show()
