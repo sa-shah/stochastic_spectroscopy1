@@ -118,7 +118,7 @@ def brownian(x0, n, dt, out=None, add_ini=True, c_sum=True):
     return out
 
 
-def MC_tests():
+def MC_OperatorEvolution():
     trials = 1000  # number of trajectories to run
     dt = 0.01
     nsteps = 100000
@@ -162,6 +162,63 @@ def MC_tests():
     plt.plot(freq, abs(spec_a))
     plt.show()
 
+def first_order_spec():
+    trials = 1000  # number of trajectories to run
+    dt = 0.01
+    nsteps = 100000
+    hbar = 0.6582  # eV.fs
+    gamma = 15  # meV
+    gamma = gamma / (hbar * 1000)  # per fs
+    sigma = 0.0025 ** 0.5  # per fs
+    n_0 = 2  # initial value of the k!=0 exciton population
+    ng = 1  # the ground state population of k=0 excitons
+    t, n = finite_difference_method(n_0, nsteps, dt, trials, gamma, sigma)  # note n's first element is n0
+    phi_n = np.zeros(n.shape)
+    phi_n[:, 1:] = dt * np.cumsum(n[:, :nsteps], axis=-1)
+
+    V0 = 0.010  # the interaction potential in eV
+    w0 = 2.35  # the frequency in energy units eV
+    hbar = 0.658  # eV.fs
+    mu = 1 # dipole moment in some arb units.
+    s1 = np.zeros((trials, nsteps + 1), dtype=complex) #container for the first order response
+
+    c1 = 2 * (mu ** 2) / hbar
+    for m in range(trials):
+        for k in range(nsteps + 1):
+            c2 = cmath.exp((+1j / hbar) * (t[k] * (w0 + V0 * ng) + 2 * V0 * phi_n[m, k]))
+            c3 = (cmath.exp(-1j*V0*t[k])-1)*ng - 1
+            c = c2*c3
+            s1[m, k] = -c1*c.imag
+
+    s1_mean = np.mean(s1, 0)
+
+    s1dummy = np.ones(nsteps + 1, dtype=complex)  # spectrum without broadening
+    s1dummy2 = np.ones(nsteps + 1, dtype=complex)  # spectrum without broadening and without shift
+    for k in range(nsteps + 1):
+        c2 = cmath.exp((+1j / hbar) * (t[k] * (w0 + V0 * ng) + 2 * V0 * 0))
+        c3 = (cmath.exp(-1j*V0*t[k])-1)*ng - 1
+        c = c2*c3
+        s1dummy[k] = -c1*c.imag
+        s1dummy2[k] = c1*(cmath.exp(+1j*t[k]*w0/hbar)).imag
+
+    plt.figure()
+    plt.plot(t, s1_mean)
+    plt.plot(t, s1dummy)
+    plt.plot(t, s1dummy2)
+    #plt.show()
+
+    spec_s1 = fftpack.fftshift(fftpack.fft(s1_mean))
+    spec_s1dummy = fftpack.fftshift(fftpack.fft(s1dummy))
+    spec_s1dummy2 = fftpack.fftshift(fftpack.fft(s1dummy2))
+    freq = fftpack.fftshift(fftpack.fftfreq(t.shape[-1], dt)) * (2 * np.pi)
+
+    plt.figure()
+    plt.plot(freq, abs(spec_s1dummy2))
+    plt.plot(freq, abs(spec_s1dummy))
+    plt.plot(freq, abs(spec_s1))
+    plt.show()
+
 #finite_difference_method()
-MC_tests()
+#MC_OperatorEvolution()
+first_order_spec()
 
