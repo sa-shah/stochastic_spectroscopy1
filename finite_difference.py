@@ -1,5 +1,5 @@
 
-from numpy import random, random_intel
+from numpy import random #, random_intel
 import matplotlib.pyplot as plt
 import numpy as np
 import cmath
@@ -18,18 +18,9 @@ def finite_difference_method(n_0=2, nsteps=1000, dt=0.1, trials=100, gamma=0.15,
     gamma is the decay rate
     sigma is the sqrt of variance
     """
-
-
     dW = (dt ** 0.5) * random.normal(0, 1, (trials, nsteps))
-
-    #print(dW.shape)
-    #plt.figure()
-    #plt.plot(dW[0, :])
-    #plt.show()
-
     n = np.ones((trials, nsteps+1))*1
     n[:, 0] = n_0
-
     for m in range(trials):
         for h in range(nsteps):
             n_prime = (-gamma*n[m, h]*dt + sigma*dW[m, h])
@@ -39,12 +30,12 @@ def finite_difference_method(n_0=2, nsteps=1000, dt=0.1, trials=100, gamma=0.15,
              #   break
 
     t = np.linspace(0.0, nsteps * dt, nsteps + 1)
-    N_mean = n_0*np.exp(-0.01*t)
+    #N_mean = n_0*np.exp(-gamma*t)
     plt.figure()
-    for k in range(trials):
+    for k in range(10):
         plt.plot(t, n[k])
-    plt.plot(t, np.mean(n, 0), linewidth=6)
-    plt.plot(t,N_mean, linewidth=6)
+    plt.plot(t, np.mean(n, 0), linewidth=3)
+    #plt.plot(t,N_mean, linewidth=3)
     plt.show()
 
     return t, n
@@ -127,119 +118,50 @@ def brownian(x0, n, dt, out=None, add_ini=True, c_sum=True):
     return out
 
 
-def first_order_spec():
-    trials = 100 # number of simulations to run for each starting value of N0
-    samples = 100 #number samples from the distribution of N0
-    dt = 0.001
-    nsteps = 10000
-    gamma = 0.01 # per fs
-    sigma = 0.025**0.5 # per fs
-    sigmaN0 = 0.00125**0.5 # per fs
-    N0 = random.normal(2, sigmaN0, samples)
-    N = np.ones((samples, nsteps+1))
-    for k in range(samples):
-        t, N_dummy = finite_difference_method(N0[k], nsteps, dt, trials, gamma, sigma)
-        N[k,:] = np.mean(N_dummy, axis=0)
-
-    u = 1
-    hbar = 0.6582 #eV.fs
-    w0 = 2.35 #eV
-    #SN = np.mean(np.cumsum(N, axis=-1), axis=0) #Sum or integral of N(t)
-    sN = np.cumsum(N, axis=-1)  # Sum or integral of N(t)
-    #print('summed N ', SN.shape)
-    V0 = 0.01 #Interaction potential (0.01 eV = 10 meV)
-    n0 = 2 #k=0 population
-    ss = np.zeros((samples, nsteps+1))
-    #ss = np.zeros(nsteps + 1)
-    c1 = 2 * (u ** 2) / hbar
-    for l in range(samples):
-        SN = sN[l]
-        for k in range(nsteps+1):
-            c2 = cmath.exp(1j*t[k]* (w0 + V0*n0 + 2*V0*SN[k]))
-            c3 = (cmath.exp(-1j*V0*t[k]) - 1)*n0 - 1
-            ss[l][k] = (c1*c2*c3).imag
-            #ss[k] = (c1 * c2 * c3).imag
-    s = np.mean(ss, axis=0)  # avg spectrum
-    #s = ss
-    plt.figure()
-    plt.plot(t, s)
-    plt.show()
-
-    spec = np.fft.fft(s)
-    freq = np.fft.fftfreq(t.shape[-1])
-    plt.figure()
-    plt.plot(abs(spec))
-    #plt.plot(spec.real)
-    plt.show()
-
-
 def MC_tests():
-    trials = 1000  # number of simulations to run for each starting value of N0
-    dt = 0.1
-    nsteps = 10000
+    trials = 1000  # number of trajectories to run
+    dt = 0.01
+    nsteps = 100000
     hbar = 0.6582  # eV.fs
-    gamma = 0.015  # eV
-    gamma = gamma/hbar # per fs
+    gamma = 15  # meV
+    gamma = gamma/(hbar*1000) # per fs
     sigma = 0.0025 ** 0.5  # per fs
-    n_0 = 4
-    t, n = finite_difference_method(n_0, nsteps, dt, trials, gamma, sigma)
-    n_sum = dt*np.cumsum(n, axis=-1) #summed over individual trials but no avg. accross trials
-    n_mc = np.mean(n, 0) # average accross trials but not summed over
-    n_mc_sum = dt*np.cumsum(n_mc) # summed over avg. path
-    n_sum_mc = np.mean(n_sum, 0)
-
+    n_0 = 2 # initial value of the k!=0 exciton population
+    ng = 1 # the ground state population of k=0 excitons
+    t, n = finite_difference_method(n_0, nsteps, dt, trials, gamma, sigma) #note n's first element is n0
+    phi_n = np.zeros(n.shape)
+    phi_n[:,1:] =dt*np.cumsum(n[:,:nsteps],axis=-1)
     plt.figure()
-    plt.plot(t,n_mc_sum)
-    plt.plot(t,t)
-    #plt.plot(t,n_sum_mc)
+    for k in range(10):
+        plt.plot(t, phi_n[k])
+    plt.plot(t, np.mean(phi_n, 0), linewidth=3)
     plt.show()
-
-    V0 = 0.1  # eV
-    w0 = 2.35  # eV
-    a = np.zeros((trials, nsteps+1), dtype=complex)
+    V0 = 0.010  # the interaction potential in eV
+    w0 = 2.35  # the frequency in energy units eV
+    hbar = 0.658 # eV.fs
+    a = np.zeros((trials, nsteps + 1), dtype=complex)
     for m in range(trials):
         for k in range(nsteps+1):
-            a[m, k] = cmath.exp(-1j*t[k]*(w0 + V0*n_0 + 2*V0*n_sum[m,k]))
+            a[m, k] = cmath.exp((-1j/hbar)*(t[k]*(w0 + V0*ng) + 2*V0*phi_n[m,k]))
     a_mean = np.mean(a, 0)
-    A = np.ones(nsteps+1, dtype=complex)
-    for k in range(nsteps+1):
-        A[k] = cmath.exp(-1j*t[k]*(w0 + V0*n_0 + 2*V0*n_mc_sum[k]))
-
-    adummy = np.ones(nsteps + 1, dtype=complex)
+    adummy = np.ones(nsteps + 1, dtype=complex) # operator a without broadening
     for k in range(nsteps + 1):
-        adummy[k] = cmath.exp(-1j * t[k] * (w0 + V0 * n_0 + 2 * V0 * 1))
+        adummy[k] = cmath.exp((-1j/hbar) * t[k] * (w0 + V0 * n_0 + 0))
 
     plt.figure()
-    plt.plot(t, np.imag(adummy),'r')
-    plt.plot(t, np.imag(a_mean),'g')
-    plt.plot(t, np.imag(A),'b')
+    plt.plot(t, np.imag(adummy))
+    plt.plot(t, np.imag(a_mean))
     plt.show()
-
-    #spec_a = np.fft.fft(np.imag(a_mean))
-    #spec_A = np.fft.fft(np.imag(A))
-    #spec_adummy = np.fft.fft(np.imag(adummy))
-    #freq = np.fft.fftfreq(t.shape[-1],dt)/2*np.pi
 
     spec_a = fftpack.fftshift(fftpack.fft(a_mean))
-    spec_A = fftpack.fftshift(fftpack.fft(A))
     spec_adummy = fftpack.fftshift(fftpack.fft(adummy))
-    freq = fftpack.fftshift(fftpack.fftfreq(t.shape[-1], dt))*2*np.pi
+    freq = fftpack.fftshift(fftpack.fftfreq(t.shape[-1], dt)) * (2 * np.pi)
 
     plt.figure()
-    plt.plot(freq, abs(spec_adummy), 'r')
-    plt.plot(freq, abs(spec_a), 'g')
-    plt.plot(freq, abs(spec_A), 'b')
-    #plt.plot(freq)
-    # plt.plot(spec.real)
+    plt.plot(freq, abs(spec_adummy))
+    plt.plot(freq, abs(spec_a))
     plt.show()
-
-#brownian([10, 1.1, 0.9], 10, 0.1)
-
-#print(dB.shape, 'shape of db', dB[0][:10])
-#plt.figure()
-#plt.hist(dB[0][:])
-#plt.show()
 
 #finite_difference_method()
 MC_tests()
-#first_order_spec()
+
