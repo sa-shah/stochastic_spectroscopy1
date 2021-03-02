@@ -289,7 +289,7 @@ def first_order_spec(parallel=True, n_0=2):
     plt.legend(['Original', 'Interacting', 'Stochastic'])
     plt.show()
 
-def first_order_exact(dt=0.1, nsteps=100000, gamma=0.015, sigma=0.0025 ** 0.5, sigmaN0=0.125 ** 0.5, N0=2):
+def first_order_exact(dt=0.1, nsteps=100000, gamma=0.012, sigma=0.0025 ** 0.5, sigmaN0=0.125 ** 0.5, N0=2):
     '''Exact formulation of the first order response as calculated by Hao et. al.
     time is in fs, rate 1/fs, frequencies or energies in eV
 
@@ -311,28 +311,29 @@ def first_order_exact(dt=0.1, nsteps=100000, gamma=0.015, sigma=0.0025 ** 0.5, s
     gamma = gamma/hbar  # 1/fs
     mu = 1 # dipole strength
     time = np.linspace(0,dt*nsteps,nsteps)
-    s1 = [(-2*mu/hbar)*np.imag(((np.exp(-1j*V0*t)-1)*N0-1)*np.exp(1j*(w+V0*N0)*t)\
+    s1 = [(-2*mu/hbar)*np.imag(((np.exp(-1j*V0*t)-1)*ng-1)*np.exp(1j*(w+V0*ng)*t)\
                                 * np.exp(2j*V0*N0*(1-np.exp(-gamma*t))/gamma)\
                                 * np.exp(-((V0*sigma)**2/gamma**3) * (2*gamma*t + 4*np.exp(-gamma*t) - np.exp(-2*gamma*t)-3)\
                                       - 2*((V0*sigmaN0/gamma)**2)*(1-np.exp(-gamma*t))**2))\
                                 for t in time]
     S1 = np.fft.fft(s1) / len(time)
     freq = np.fft.fftfreq(len(S1), d=dt)
+    energy = 2*np.pi*hbar*freq
 
 
-    plt.figure()
-    plt.plot(time, s1)
-    plt.title('First order response in time domain')
-    plt.xlabel('time (fs)')
-    plt.ylabel('s1')
+    # plt.figure()
+    # plt.plot(time, s1)
+    # plt.title('First order response in time domain')
+    # plt.xlabel('time (fs)')
+    # plt.ylabel('s1')
 
     limit = int(nsteps/2)
-    print(limit)
-    plt.figure()
-    plt.plot(2*np.pi*hbar*freq[:limit], np.abs(S1[:limit]))
-    plt.title('Spectrum of first order response')
-    plt.xlabel('Energy or Freq. (eV)')
-    plt.ylabel('S1(w)')
-    plt.show()
+    # print(limit)
+    # plt.figure()
+    # plt.plot(energy[:limit], np.abs(S1[:limit]))
+    # plt.title('Spectrum of first order response')
+    # plt.xlabel('Energy or Freq. (eV)')
+    # plt.ylabel('S1(w)')
+    # plt.show()
 
-    return freq,S1
+    return energy[:limit], np.abs(S1[:limit])
