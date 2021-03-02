@@ -289,3 +289,50 @@ def first_order_spec(parallel=True, n_0=2):
     plt.legend(['Original', 'Interacting', 'Stochastic'])
     plt.show()
 
+def first_order_exact(dt=0.1, nsteps=100000, gamma=0.015, sigma=0.0025 ** 0.5, sigmaN0=0.125 ** 0.5, N0=2):
+    '''Exact formulation of the first order response as calculated by Hao et. al.
+    time is in fs, rate 1/fs, frequencies or energies in eV
+
+    Inputs
+    dt = time step,
+    nsteps = number of time-steps,
+    gamma = decay rate given in eV
+    sigma = brownian std in 1/fs
+    sigmaN0 = laser std or initial exciton std in 1/fs
+    V0 = interaction fixed at (10 meV/1000hbar) in 1/fs
+    N0 = mean of initial population for k!=0 excitons
+        Returns the spectrum and frequencies'''
+
+
+    hbar = 0.6582  # eV.fs Planck's constant
+    w = 2.35/hbar # excitation center frequency in 1/fs
+    V0 = 0.01/hbar # interaction potential in 1/fs
+    ng = 1  # the ground state population of k=0 excitons
+    gamma = gamma/hbar  # 1/fs
+    mu = 1 # dipole strength
+    time = np.linspace(0,dt*nsteps,nsteps)
+    s1 = [(-2*mu/hbar)*np.imag(((np.exp(-1j*V0*t)-1)*N0-1)*np.exp(1j*(w+V0*N0)*t)\
+                                * np.exp(2j*V0*N0*(1-np.exp(-gamma*t))/gamma)\
+                                * np.exp(-((V0*sigma)**2/gamma**3) * (2*gamma*t + 4*np.exp(-gamma*t) - np.exp(-2*gamma*t)-3)\
+                                      - 2*((V0*sigmaN0/gamma)**2)*(1-np.exp(-gamma*t))**2))\
+                                for t in time]
+    S1 = np.fft.fft(s1) / len(time)
+    freq = np.fft.fftfreq(len(S1), d=dt)
+
+
+    plt.figure()
+    plt.plot(time, s1)
+    plt.title('First order response in time domain')
+    plt.xlabel('time (fs)')
+    plt.ylabel('s1')
+
+    limit = int(nsteps/2)
+    print(limit)
+    plt.figure()
+    plt.plot(2*np.pi*hbar*freq[:limit], np.abs(S1[:limit]))
+    plt.title('Spectrum of first order response')
+    plt.xlabel('Energy or Freq. (eV)')
+    plt.ylabel('S1(w)')
+    plt.show()
+
+    return freq,S1
