@@ -298,7 +298,7 @@ def first_order_exact(dt=0.1, nsteps=100000, gamma=0.015, sigma=0.0025 ** 0.5, s
     nsteps = number of time-steps,
     gamma = decay rate given in eV
     sigma = brownian std in 1/fs
-    sigmaN0 = laser std or initial exciton std in 1/fs
+    sigmaN0 = laser std or initial exciton std. NOTE: it is unit less
     V0 = interaction fixed at (10 meV/1000hbar) in 1/fs
     N0 = mean of initial population for k!=0 excitons
         Returns the spectrum and frequencies'''
