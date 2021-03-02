@@ -6,6 +6,6 @@ if __name__=='__main__':
     finite_difference.first_order_exact()
     finish = time.perf_counter()
     print(f"time taken {finish-start}")
-    print('office pc commit')
+    print('office pc commit test 1')
 
 
