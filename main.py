@@ -7,7 +7,7 @@ if __name__=='__main__':
     # t, S1 = finite_difference.first_order_exact(sigmaN0=0.25**0.5, N0=0)
     # t, S2 = finite_difference.first_order_exact(sigmaN0=0.125**0.5, N0=0)
     # t, S3 = finite_difference.first_order_exact(sigmaN0=0*0.04 ** 0.5, N0=2)
-    # finish = time.perf_counter()
+    finish = time.perf_counter()
     # plt.figure()
     # plt.plot(t, S1)
     # plt.plot(t, S2)
@@ -18,6 +18,6 @@ if __name__=='__main__':
     # plt.legend(['0.25', '0.125', '0.04'])
     # plt.show()
     print(f"time taken {finish-start}")
-    print('office pc branch')
+    print('the office pc branch')
 
 
