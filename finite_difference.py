@@ -19,9 +19,9 @@ def single_trial(dt, gamma, N0, sigma, dW):
     n = np.ones(len(dW)+1)*0
     n[0] = N0
     for h in range(len(dW)):
-        n[h+1] = n[h] + 1* (-gamma*n[h]*dt + sigma*dW[h])
-        if n[h+1]<=0:
-           break
+        n[h+1] = n[h] + 1* (-gamma*n[h]*dt + sigma*dW[h]) #replace the second term with appropreate SDE
+        # if n[h+1]<=0:
+        #    break
     return n
 
 
@@ -48,10 +48,10 @@ def parallel_finite_difference(N0=2, nsteps=10000, dt=0.1, trials=1000, gamma=0.
         for x in f:
             n.append(x)
         n = np.array(n)
-        plt.figure()
-        for k in range(10):
-            plt.plot(t, n[k])
-        plt.plot(t, np.mean(n, 0), linewidth=3)
+        # plt.figure()
+        # for k in range(10):
+        #     plt.plot(t, n[k])
+        # plt.plot(t, np.mean(n, 0), linewidth=3)
         #plt.show()
 
         return t, n
@@ -77,7 +77,7 @@ def single_spec(mu, ng,  w0, V0, t, phiN1):
     return s1
 
 
-def first_order_spec(dt=0.1, nsteps=100000, gamma=0.012, sigma=0.0025 ** 0.5, sigmaN0=0.125 ** 0.5, N0=2, trials=1000, samples=100, parallel=True):
+def first_order_spec(dt=0.1, nsteps=100000, gamma=0.012, sigma=0.0025 ** 0.5, N0=2, trials=1000, samples=100, parallel=True):
     '''main function for computing the first order spectrum through finite element solution of SDE.
     Inputs
     dt = time step in fs
@@ -104,6 +104,8 @@ def first_order_spec(dt=0.1, nsteps=100000, gamma=0.012, sigma=0.0025 ** 0.5, si
     t, n = parallel_finite_difference(N0, nsteps, dt, trials, gamma, sigma)
     phi_n = np.zeros(n.shape)
     phi_n[:, 1:] = dt * np.cumsum(n[:, :nsteps], axis=-1) # computing the integral of N(t)
+    # notice the first element of phi_n is skipped from the np.cumsum to avoid double counting of the starting value
+    # print phi_n to confirm if the integration is performed properly without double counting.
     V0 = 0.010/hbar  # the interaction potential in 1/fs
     w0 = 2.35/hbar  # the frequency in 1/fs
     mu = 1 # dipole moment in some arb units.
@@ -144,8 +146,8 @@ def first_order_spec(dt=0.1, nsteps=100000, gamma=0.012, sigma=0.0025 ** 0.5, si
         s1dummy[k] = -c1*c.imag
         s1dummy2[k] = c1*(cmath.exp(+1j*t[k]*w0)).imag
 #################################################################3
-    plt.figure()
-    plt.plot(t, s1_mean)
+    # plt.figure()
+    # plt.plot(t, s1_mean)
     #plt.plot(t, s1dummy)
     #plt.plot(t, s1dummy2)
     #plt.show()
@@ -158,17 +160,49 @@ def first_order_spec(dt=0.1, nsteps=100000, gamma=0.012, sigma=0.0025 ** 0.5, si
 
     limit = int(nsteps / 2)
     # print(limit)
-    plt.figure()
-    plt.plot(energy[:limit], np.abs(spec_s1[:limit]))
-    plt.plot(energy[:limit], np.abs(spec_s1dummy[:limit]))
-    plt.plot(energy[:limit], np.abs(spec_s1dummy2[:limit]))
-    plt.legend(['stochastic + interacting', 'interacting', 'original'])
-    plt.title('Spectrum of first order response')
-    plt.xlabel('Energy or Freq. (eV)')
-    plt.ylabel('S1(w)')
+    # plt.figure()
+    # plt.plot(energy[:limit], np.abs(spec_s1[:limit]))
+    # plt.plot(energy[:limit], np.abs(spec_s1dummy[:limit]))
+    # plt.plot(energy[:limit], np.abs(spec_s1dummy2[:limit]))
+    # plt.legend(['stochastic + interacting', 'interacting', 'original'])
+    # plt.title('Spectrum of first order response')
+    # plt.xlabel('Energy or Freq. (eV)')
+    # plt.ylabel('S1(w)')
     #plt.show()
 
     return energy[:limit], np.abs(spec_s1[:limit])
+
+
+def laserbroadening(dt=0.1, nsteps=100000, gamma=0.012, sigma=0.0025 ** 0.5, sigmaN0=0.125 ** 0.5, N0=2, trials=1000, samples=100):
+    n0 = sigmaN0 * random.normal(0, 1, samples) + N0
+    plt.figure()
+    plt.hist(n0)
+
+    spec = []
+    energy = []
+    for n in n0:
+        energy, s = first_order_spec(dt, nsteps, gamma, sigma, n, trials)
+        spec.append(s)
+
+
+    spec = np.array(spec)
+    print(spec.shape, 'the spec shape')
+    s1_mean = np.mean(spec, 0)
+    print(s1_mean.shape, 'the shape of mean')
+    plt.figure()
+    plt.plot(energy, spec[0])
+    plt.plot(energy, spec[1])
+    plt.plot(energy, s1_mean)
+    plt.legend(['sample 1', 'sample2', 'mean'])
+    plt.title('Spectrum of first order response')
+    plt.xlabel('Energy or Freq. (eV)')
+    plt.ylabel('S1(w)')
+    # plt.show()
+
+    return energy, s1_mean
+
+
+
 
 def first_order_exact(dt=0.1, nsteps=100000, gamma=0.012, sigma=0.0025 ** 0.5, sigmaN0=0.125 ** 0.5, N0=2):
     '''Exact formulation of the first order response as calculated by Hao et. al.
