@@ -17,6 +17,7 @@ def single_trial(dt, gamma, N0, sigma, dW):
     sigma = std of brownian process units are in 1/fs**0.5
     dW = an array of brownian steps'''
     n = np.ones(len(dW)+1)*0
+    #print('n0 in single trial', N0)
     n[0] = N0
     for h in range(len(dW)):
         n[h+1] = n[h] + 1* (-gamma*n[h]*dt + sigma*dW[h]) #replace the second term with appropreate SDE
@@ -42,6 +43,7 @@ def parallel_finite_difference(N0=2, nsteps=10000, dt=0.1, trials=1000, gamma=0.
     with concurrent.futures.ProcessPoolExecutor() as executor:
         t = np.linspace(0.0, nsteps * dt, nsteps + 1)
         dW = (dt**0.5) * random.normal(0, 1, (trials, nsteps))
+        #print('n0 in parallel_finite_difference ', N0)
         func = partial(single_trial, dt, gamma, N0, sigma)
         f = executor.map(func, dW)
         n = []
@@ -77,7 +79,7 @@ def single_spec(mu, ng,  w0, V0, t, phiN1):
     return s1
 
 
-def first_order_spec(dt=0.1, nsteps=100000, gamma=0.012, sigma=0.0025 ** 0.5, N0=2, trials=1000, samples=100, parallel=True):
+def first_order_spec(dt=0.1, nsteps=100000, gamma=0.012, sigma=0.0025 ** 0.5, N0=2, trials=1000):
     '''main function for computing the first order spectrum through finite element solution of SDE.
     Inputs
     dt = time step in fs
@@ -90,43 +92,20 @@ def first_order_spec(dt=0.1, nsteps=100000, gamma=0.012, sigma=0.0025 ** 0.5, N0
     trials = number of paths to average for each starting value of N0
     samples = number of samples from the initial population of k!=0 excitons
     Returns an averaged spectrum for a single starting volue of the N(0)'''
-
+    #print('n0 in first_order_spec ', N0)
     hbar = 0.6582  # eV.fs
     gamma = gamma /hbar  # per fs
     ng = 1  # the ground state population of k=0 excitons
-
-    # if parallel:
-    #     t, n = parallel_finite_difference(N0, nsteps, dt, trials, gamma, sigma)
-    # else:
-    #     t, n = finite_difference_method(n_0, nsteps, dt, trials, gamma, sigma)  # note n's first element is n0
-
-
     t, n = parallel_finite_difference(N0, nsteps, dt, trials, gamma, sigma)
     phi_n = np.zeros(n.shape)
     phi_n[:, 1:] = dt * np.cumsum(n[:, :nsteps], axis=-1) # computing the integral of N(t)
+
     # notice the first element of phi_n is skipped from the np.cumsum to avoid double counting of the starting value
     # print phi_n to confirm if the integration is performed properly without double counting.
     V0 = 0.010/hbar  # the interaction potential in 1/fs
     w0 = 2.35/hbar  # the frequency in 1/fs
     mu = 1 # dipole moment in some arb units.
     c1 = 2 * (mu ** 2) / hbar
-
-    # if parallel:
-    #     with concurrent.futures.ProcessPoolExecutor() as executor:
-    #         func = partial(single_spec, hbar, mu, ng,  w0, V0, t)
-    #         f = executor.map(func, phi_n)
-    #         s1 = []
-    #         for x in f:
-    #             s1.append(x)
-    #         s1 = np.array(s1)
-    # else:
-    #     s1 = np.zeros((trials, nsteps + 1), dtype=complex) #container for the first order response
-    #     for m in range(trials):
-    #         for k in range(nsteps + 1):
-    #             c2 = cmath.exp((+1j / hbar) * (t[k] * (w0 + V0 * ng) + 2 * V0 * phi_n[m, k]))
-    #             c3 = (cmath.exp(-1j*V0*t[k])-1)*ng - 1
-    #             c = c2*c3
-    #             s1[m, k] = -c1*c.imag
 
     with concurrent.futures.ProcessPoolExecutor() as executor:
         func = partial(single_spec, mu, ng, w0, V0, t)
@@ -145,7 +124,7 @@ def first_order_spec(dt=0.1, nsteps=100000, gamma=0.012, sigma=0.0025 ** 0.5, N0
         c = c2*c3
         s1dummy[k] = -c1*c.imag
         s1dummy2[k] = c1*(cmath.exp(+1j*t[k]*w0)).imag
-#################################################################3
+
     # plt.figure()
     # plt.plot(t, s1_mean)
     #plt.plot(t, s1dummy)
@@ -174,29 +153,30 @@ def first_order_spec(dt=0.1, nsteps=100000, gamma=0.012, sigma=0.0025 ** 0.5, N0
 
 
 def laserbroadening(dt=0.1, nsteps=100000, gamma=0.012, sigma=0.0025 ** 0.5, sigmaN0=0.125 ** 0.5, N0=2, trials=1000, samples=100):
-    n0 = sigmaN0 * random.normal(0, 1, samples) + N0
-    plt.figure()
-    plt.hist(n0)
-
+    n0 = random.normal(N0, sigmaN0, samples) #sigmaN0 * random.normal(0, 1, samples) + N0
+    # plt.figure()
+    # plt.hist(n0)
+    # plt.show()
     spec = []
     energy = []
     for n in n0:
-        energy, s = first_order_spec(dt, nsteps, gamma, sigma, n, trials)
+        #print('n0 in laserbroadening ', n)
+        energy, s = first_order_spec(dt=dt, nsteps=nsteps, gamma=gamma, sigma=sigma, N0=n, trials=trials)
         spec.append(s)
 
 
     spec = np.array(spec)
-    print(spec.shape, 'the spec shape')
+    # print(spec.shape, 'the spec shape')
     s1_mean = np.mean(spec, 0)
-    print(s1_mean.shape, 'the shape of mean')
-    plt.figure()
-    plt.plot(energy, spec[0])
-    plt.plot(energy, spec[1])
-    plt.plot(energy, s1_mean)
-    plt.legend(['sample 1', 'sample2', 'mean'])
-    plt.title('Spectrum of first order response')
-    plt.xlabel('Energy or Freq. (eV)')
-    plt.ylabel('S1(w)')
+    # print(s1_mean.shape, 'the shape of mean')
+    # plt.figure()
+    # plt.plot(energy, spec[0])
+    # plt.plot(energy, spec[1])
+    # plt.plot(energy, s1_mean)
+    # plt.legend(['sample 1', 'sample2', 'mean'])
+    # plt.title('Spectrum of first order response')
+    # plt.xlabel('Energy or Freq. (eV)')
+    # plt.ylabel('S1(w)')
     # plt.show()
 
     return energy, s1_mean
